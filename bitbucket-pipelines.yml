@@ -1,0 +1,32 @@
+pipelines:
+  custom: # Pipeline that only runs manually
+    develop: 
+      - step:
+          name: Building the app for development
+          image: node:latest
+          script:
+            - npm install
+            - export NODE_OPTIONS=--openssl-legacy-provider
+            - npm run build
+          artifacts:
+            - dist/my-angular-project/*
+      - step:
+          name: Deploying the app to S3
+          deployment: development
+          script:
+            - pipe: atlassian/aws-s3-deploy:1.1.0
+              variables:
+                AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
+                AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
+                AWS_DEFAULT_REGION: $AWS_DEFAULT_REGION
+                S3_BUCKET: $S3_BUCKET
+                ACL: "public-read"
+                LOCAL_PATH: "dist/my-angular-project"
+            - pipe: atlassian/aws-cloudfront-invalidate:0.6.0
+              variables:
+                AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
+                AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
+                AWS_DEFAULT_REGION: $AWS_DEFAULT_REGION
+                DISTRIBUTION_ID: 'EX7O4HBAR9R54'
+                PATHS: "/*"
+    
